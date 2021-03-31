@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -54,21 +55,29 @@ type Raft struct {
 
 	// 收到最后一天心跳消息的时间
 	lastGetHeartBeatTime int64
+
+	// 自己维护的消息体
+	msg *msgStore
+
+	// 日志logger
+	logger *log.Logger
 }
 
 type NodeInfo struct {
 	ID int // 身份ID
 	IP string // IP
 	PORT string // 端口
+	HttpPort string //对外提供服务的端口
 }
 
 // 实例化raft节点
-func NewRaft(IP string, PORT string, ID int) *Raft{
+func NewRaft(IP string, PORT string, ID int, HttpPORT string) *Raft{
 	// 先实例化节点信息
 	node := &NodeInfo{
 		IP:IP,
 		PORT:PORT,
 		ID:ID,
+		HttpPort:HttpPORT,
 	}
 
 	// 实例化Raft对象
@@ -104,6 +113,18 @@ func NewRaft(IP string, PORT string, ID int) *Raft{
 	// 心跳检测超时时间
 	raft.timeout = heartTimeOut
 
+	// 日志logger
+	raft.logger = createLogger()
+
+	// 先实例化自己的消息
+	msgs := &msgStore{
+		maxId:0,
+		msgLog:make(map[int]msg, 20),
+		msg:make(map[string]string, 20),
+	}
+	//msgs.msg["test"] = "我说测试数据"
+
+	raft.msg = msgs
 	return raft
 
 }
@@ -111,8 +132,8 @@ func NewRaft(IP string, PORT string, ID int) *Raft{
 // 修改raft节点为候选人
 func (r *Raft) becomeCandidate() bool  {
 	// 睡眠下在成为候选人吧
-	rand := RandInt64(2500, 5000)
-	fmt.Printf("节点%d准备候选人,sleep%d", r.id, rand)
+	rand := RandInt64(1500, 5000)
+	fmt.Printf("节点%d准备候选人,sleep %d ms", r.id, rand)
 	fmt.Println()
 	time.Sleep(time.Duration(rand) * time.Millisecond)
 
@@ -277,7 +298,6 @@ func (r *Raft) setDefault() {
 
 	//r.lock.Unlock()
 }
-
 
 
 

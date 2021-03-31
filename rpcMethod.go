@@ -53,3 +53,92 @@ func (r *Raft) HeartBeatRe (n NodeInfo, b *bool) error {
 	return nil
 }
 
+// 主节点设置值
+func (r *Raft) ReceiveMessage(s []string,  b *bool) error {
+	// 先获取自己的最大ID
+	id := r.msg.getNewId()
+
+	// 记录日志
+	r.msg.msgLog[id] = msg{
+		act:"set",
+		key:s[0],
+		val:s[1],
+	}
+
+	// 记录应答总数
+	ackNum := 0
+
+	// 广播
+	go r.broadCast("Raft.SetMessage", s, func(ok bool) {
+		if ok {
+			ackNum++
+		}
+	})
+
+	// 判断是否超过半数应答
+	for {
+		if ackNum > raftNodeCount / 2  - 1{
+			r.logger.Println("全网已经超过半数的设置值成功")
+
+			// 自己设置值
+			r.msg.set(s[0], s[1])
+			// 返回给 客户端
+			*b = true
+			break
+		}
+	}
+
+	return nil
+}
+
+
+// 主节点删除值
+func (r *Raft) DeleteMessage(s string, b *bool) error {
+	// 先获取自己的最大ID
+	id := r.msg.getNewId()
+
+	// 记录日志
+	r.msg.msgLog[id] = msg{
+		act:"delete",
+		key:s,
+	}
+
+	// 记录应答总数
+	ackNum := 0
+
+	// 广播
+	go r.broadCast("Raft.DelMessage", s, func(ok bool) {
+		if ok {
+			ackNum++
+		}
+	})
+
+	// 判断是否超过半数应答
+	for {
+		if ackNum > raftNodeCount / 2  - 1{
+			r.logger.Println("全网已经超过半数的设置值成功")
+
+			// 自己设置值
+			r.msg.delete(s)
+			// 返回给 客户端
+			*b = true
+			break
+		}
+	}
+
+	return nil
+}
+
+// 其他节点设置值
+func (r *Raft) SetMessage(s []string, b *bool) error {
+	r.msg.set(s[0], s[1])
+	*b = true
+	return nil
+}
+
+// 其他节点删除值
+func (r *Raft) DelMessage(key string, b *bool) error {
+	r.msg.delete(key)
+	*b = true
+	return nil
+}

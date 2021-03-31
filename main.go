@@ -19,22 +19,34 @@ var heartTimes = 3
 // 心跳检测超时时间
 var heartTimeOut = 7
 
-// node结构表
+// 对外提供服务检测时间
+var supportTimes = 2
+
+// node结构表(节点之间通讯）
 var nodeTable map[int]string
+
+//节点池（对外提供服务）
+var nodeTableHttp map[int]string
 
 // rpc协议
 var rpcProtocol = "tcp"
 
-
 func main()  {
-	// 这里为了方便 先写死3个node 后续提供统一注册中心??
+
+	// 这里为了方便 先写死3个node 后续提供统一注册中心?? （实现节点之间通讯的端口）
 	nodeTable = map[int]string {
 		1 : "9111",
 		2 : "9112",
 		3 : "9113",
 	}
 
-	//nodeTable := map[int]&Raft{}
+	//定义三个节点  节点编号 - 监听端口号（对外提供服务端口）
+	nodeTableHttp = map[int]string{
+		1: "8011",
+		2: "8012",
+		3: "8013",
+	}
+
 
 	// 判断当前连接的机器是否属于集群
 	if len(os.Args) != 2 {
@@ -47,8 +59,12 @@ func main()  {
 		panic("不存在这个服务器")
 	}
 
+	if _,ok := nodeTableHttp[i] ; !ok {
+		panic("不存在这个服务器")
+	}
+
 	// 创建raft
-	raft := NewRaft("127.0.0.1", nodeTable[i], i)
+	raft := NewRaft("127.0.0.1", nodeTable[i], i, nodeTableHttp[i])
 	//nodeTable[i] = raft
 
 	// 注册rpc
@@ -56,6 +72,9 @@ func main()  {
 
 	// 开启心跳检测
 	go raft.heartBeat()
+
+	// 对外提供服务
+	go raft.httpListen()
 
 	// 开启选举
 	CirCle:

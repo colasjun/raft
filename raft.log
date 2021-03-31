@@ -1,0 +1,12 @@
+raft log: http.go:15: 3开启对外服务,端口8013
+raft log: http.go:43: 1 收到get key = lijun
+raft log: http.go:66: 1 收到set lijun = 29岁啦啦啦啦啦
+raft log: rpcMethod.go:81: 全网已经超过半数的设置值成功
+raft log: http.go:43: 1 收到get key = lijun
+raft log: http.go:109: 1 收到delete lijun
+raft log: rpcMethod.go:119: 全网已经超过半数的设置值成功
+raft log: http.go:43: 1 收到get key = lijun
+raft log: http.go:43: 1 收到get key = test
+raft log: http.go:66: 1 收到set test = 哈哈哈
+raft log: rpcMethod.go:81: 全网已经超过半数的设置值成功
+raft log: http.go:43: 1 收到get key = test
